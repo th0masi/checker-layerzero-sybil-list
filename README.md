@@ -1,6 +1,6 @@
 # checker-layerzero-sybil-list
 
-![Screenshot](https://i.imgur.com/cgKsTqh.png)  
+![Screenshot](https://i.imgur.com/h8fuM9g.png)  
 
 1. Установите [**Python 3.11**](https://www.python.org/downloads/release/python-3110/)  
 2. Откройте `cmd.exe`
