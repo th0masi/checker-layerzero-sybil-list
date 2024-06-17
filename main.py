@@ -248,12 +248,18 @@ async def check_sybil_wallets(db_path, wallets_file):
     sybil_percentage = (sybil_wallets / total_wallets) * 100 if total_wallets > 0 else 0
     sybil_percentage = round(sybil_percentage, 2)
 
-    summary_str = (
+    print(
         f"\nКошельков: {colored(total_wallets, 'white')} | "
         f"Сибильных: {colored(sybil_wallets, 'red')} ({colored(sybil_percentage, 'red')}%) | "
         f"Чистых: {colored(non_sybil_wallets, 'green')}"
     )
-    print(summary_str)
+
+    df = pd.DataFrame(results, columns=["Кошелек", "Сибил", "Кол-во источников", "Источники"])
+    csv_path = 'results.csv'
+    df.to_csv(csv_path, index=False, encoding='utf-8-sig')
+
+    absolute_path = os.path.abspath(csv_path)
+    print(f"Данные сохранены в таблицу results.csv, путь: '{absolute_path}'")
 
 
 async def view_deleted_sources(db_path):
