@@ -2,6 +2,7 @@ import pandas as pd
 import aiosqlite
 import aiofiles
 import sys
+import os
 import asyncio
 from loguru import logger
 from InquirerPy import inquirer
@@ -40,7 +41,7 @@ async def read_wallets_from_file(wallets_file):
                 wallets.add(address)
 
     if not wallets:
-        logger.error("Файл wallets.txt пуст или содержит некорректные данные.")
+        logger.error("Файл wallets.txt пуст или содержит некорректные данные")
         return None
 
     return wallets
@@ -68,7 +69,7 @@ async def database_exists(db_path):
 
 async def create_database_from_csv(csv_file, db_path):
     if await database_exists(db_path):
-        logger.info("База данных уже существует и содержит данные.")
+        logger.info("База данных уже существует и содержит данные")
         return
 
     df = pd.read_csv(csv_file, low_memory=False)
@@ -152,7 +153,24 @@ async def view_selected_wallet_statistics(db_path, wallets_file):
     if rows:
         print(tabulate(rows, headers=["Источник", "Количество кошельков"], tablefmt="plain"))
     else:
-        logger.error("Нет данных для отображения статистики кошельков.")
+        logger.error("Нет данных для отображения статистики кошельков")
+
+
+async def view_wallet_statistics(db_path):
+    async with aiosqlite.connect(db_path) as db:
+        query = '''
+            SELECT source, COUNT(address) as wallet_count
+            FROM data_table
+            GROUP BY source
+            ORDER BY wallet_count DESC
+        '''
+        async with db.execute(query) as cursor:
+            rows = await cursor.fetchall()
+
+    if rows:
+        print(tabulate(rows, headers=["Источник", "Количество кошельков"], tablefmt="plain"))
+    else:
+        logger.error("Нет данных для отображения статистики кошельков")
 
 
 async def delete_source(db_path, source_name):
@@ -170,6 +188,18 @@ async def delete_source(db_path, source_name):
     logger.info(f"Удалено строк: {deleted_rows}")
 
 
+async def delete_database(db_path):
+    try:
+        if os.path.exists(db_path):
+            os.remove(db_path)
+            logger.info(f"База данных по пути '{db_path}' успешно удалена")
+            logger.info(f"Перезапустите софт")
+        else:
+            logger.error(f"Файл базы данных по пути '{db_path}' не существует")
+    except Exception as e:
+        logger.error(f"Ошибка при удалении базы данных: {e}")
+
+
 async def check_sybil_wallets(db_path, wallets_file):
     results = []
     total_wallets = 0
@@ -180,31 +210,26 @@ async def check_sybil_wallets(db_path, wallets_file):
         return
 
     async with aiosqlite.connect(db_path) as db:
-        async with aiofiles.open(wallets_file, 'r') as file:
-            async for line in file:
-                address = line.strip()
-                if not address:
-                    continue
+        for address in wallets:
+            total_wallets += 1
 
-                total_wallets += 1
+            query = '''
+                SELECT d.address, d.source
+                FROM data_table d
+                WHERE d.address = ?
+            '''
+            async with db.execute(query, (address,)) as cursor:
+                sources = set()
+                async for row in cursor:
+                    sources.add(row[1])
 
-                query = '''
-                    SELECT d.address, d.source
-                    FROM data_table d
-                    WHERE d.address = ?
-                '''
-                async with db.execute(query, (address,)) as cursor:
-                    sources = set()
-                    async for row in cursor:
-                        sources.add(row[1])
-
-                    if sources:
-                        sybil_wallets += 1
-                        results.append(
-                            (address, 'ДА', len(sources), '\n'.join(sources)))
-                    else:
-                        non_sybil_wallets += 1
-                        results.append((address, 'НЕТ', 0, ''))
+                if sources:
+                    sybil_wallets += 1
+                    results.append(
+                        (address, 'ДА', len(sources), '\n'.join(sources)))
+                else:
+                    non_sybil_wallets += 1
+                    results.append((address, 'НЕТ', 0, ''))
 
     results.sort(
         key=lambda x: (x[1] == "НЕТ", x[0] if x[0] is not None else ""))
@@ -261,6 +286,7 @@ async def main_loop():
                 {"name": "Удалить источник", "value": "delete_source"},
                 {"name": "Посмотреть удаленные источники", "value": "view_sources"},
                 {"name": "Статистика всех кошельков", "value": "view_wallet_statistics"},
+                {"name": "Удалить БД и начать заново", "value": "delete_db"},
                 {"name": "Выход", "value": "exit"}
             ]
         ).execute_async()
@@ -279,6 +305,9 @@ async def main_loop():
             await view_wallet_statistics(db_path)
         elif choice == "view_selected_wallet_statistics":
             await view_selected_wallet_statistics(db_path, wallets_file)
+        elif choice == "delete_db":
+            await delete_database(db_path)
+            break
         elif choice == "exit":
             break
 
