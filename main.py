@@ -226,7 +226,7 @@ async def check_sybil_wallets(db_path, wallets_file):
                 if sources:
                     sybil_wallets += 1
                     results.append(
-                        (address, 'ДА', len(sources), '\n'.join(sources)))
+                        (address, 'ДА', len(sources), ';'.join(sources)))
                 else:
                     non_sybil_wallets += 1
                     results.append((address, 'НЕТ', 0, ''))
