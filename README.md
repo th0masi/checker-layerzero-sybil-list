@@ -7,7 +7,7 @@
 3. Введите команду `git clone https://github.com/th0masi/checker-layerzero-sybil-list.git`
 4. Далее команду `cd checker-layerzero-sybil-list`
 5. Установите зависимости командой `pip install -r requirements.txt`
-6. Найдите папку с файлами в папку `data` поместите адреса кошельков в `wallets.txt` и файл `data.csv` (можно взять тут)
+6. Найдите папку с скриптом и в папку `data` поместите адреса кошельков в `wallets.txt` и файл `data.csv` (можно взять тут)
 7. Запустите скрипт командой `python main.py`
 
 > [!NOTE]
