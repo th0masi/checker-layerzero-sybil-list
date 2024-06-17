@@ -35,7 +35,7 @@ async def read_wallets_from_file(wallets_file):
     wallets = set()
     async with aiofiles.open(wallets_file, 'r') as file:
         async for line in file:
-            address = line.strip()
+            address = line.strip().lower()
             if address:
                 wallets.add(address)
 
