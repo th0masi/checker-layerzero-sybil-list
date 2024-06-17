@@ -151,7 +151,7 @@ async def view_selected_wallet_statistics(db_path, wallets_file):
             rows = await cursor.fetchall()
 
     if rows:
-        print(tabulate(rows, headers=["Источник", "Количество кошельков"], tablefmt="plain"))
+        print(tabulate(rows, headers=["Источник", "Кол-во кошельков"], tablefmt="plain"))
     else:
         logger.error("Нет данных для отображения статистики кошельков")
 
@@ -168,7 +168,7 @@ async def view_wallet_statistics(db_path):
             rows = await cursor.fetchall()
 
     if rows:
-        print(tabulate(rows, headers=["Источник", "Количество кошельков"], tablefmt="plain"))
+        print(tabulate(rows, headers=["Источник", "Кол-во кошельков"], tablefmt="plain"))
     else:
         logger.error("Нет данных для отображения статистики кошельков")
 
